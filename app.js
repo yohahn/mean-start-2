@@ -6,9 +6,7 @@
 
 var express = require('express'),
     routes = require('./routes'),
-    api = require('./routes/api'),
-    http = require('http'),
-    path = require('path');
+    api = require('./routes/api');
 
 var app = express();
 
@@ -18,24 +16,28 @@ var app = express();
  */
 
 // all environments
-app.set('port', process.env.PORT || 3000);
-app.set('views', __dirname + '/views');
-app.set('view engine', 'jade');
-app.use(express.logger('dev'));
-app.use(express.bodyParser());
-app.use(express.methodOverride());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(app.router);
+app.configure(function() {
+    app.set('port', process.env.PORT || 3000);
+    app.set('views', __dirname + '/views');
+    app.set('view engine', 'jade');
+    app.set('view options', {
+        layout: false
+    });
+    app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use(express.static(__dirname + '/public'));
+    app.use(app.router);
+});
 
 // development only
-if (app.get('env') === 'development') {
-    app.use(express.errorHandler());
-}
+app.configure('development', function() {
+    app.use(express.errorHandler({ dumpException: true, showStack: true }));
+});
 
 // production only
-if (app.get('env') === 'production') {
-    // TODO
-}
+app.configure('production', function() {
+    app.use(express.errorHandler());
+});
 
 
 /**
@@ -61,6 +63,6 @@ app.get('*', routes.index);
 /**
  * Start Server
  */
-var server = app.listen(app.get('port'), function() {
-    console.log('Express server listening on port %d', app.get('port'));
+app.listen(app.get('port'), function() {
+    console.log('Express server listening on port %d in %s mode', app.get('port'), app.settings.env);
 });
